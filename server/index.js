@@ -1,35 +1,36 @@
-// server/index.js
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const cors = require('cors');
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const cors = require("cors");
+const connectDB = require("./config/db");
+const orderRoutes = require("./routes/orderRoutes");
+require("dotenv").config();
 
 const app = express();
-app.use(cors());
-
 const server = http.createServer(app);
+
+// 1. Connect to Database
+connectDB();
+
+// 2. Middlewares
+app.use(cors());
+app.use(express.json());
+
+// 3. Socket.io setup
 const io = new Server(server, {
-    cors: {
-        origin: "http://localhost:5173", // Vite's default port
-        methods: ["GET", "POST"]
-    }
+  cors: { origin: "http://localhost:5173", methods: ["GET", "POST"] },
 });
 
-io.on('connection', (socket) => {
-    console.log('New connection:', socket.id);
+// Pass 'io' to express so controllers can use it
+app.set("socketio", io);
 
-    // When a Customer sends an order
-    socket.on('place_order', (orderData) => {
-        console.log('Order received from table:', orderData.table);
-        // Send it to the Admin immediately
-        io.emit('new_order_alert', orderData);
-    });
-
-    socket.on('disconnect', () => {
-        console.log('User disconnected');
-    });
+io.on("connection", (socket) => {
+  console.log(`📡 New Socket: ${socket.id}`);
+  socket.on("disconnect", () => console.log("🔌 Disconnected"));
 });
 
-server.listen(5001, () => {
-    console.log('SERVER RUNNING ON PORT 5001');
-});
+// 4. Routes
+app.use("/api/orders", orderRoutes);
+
+const PORT = process.env.PORT || 5001;
+server.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
