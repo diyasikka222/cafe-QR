@@ -1,47 +1,31 @@
-// src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-// Layout Components
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-
-// User/Client Pages
-import Menu from './pages/user/Menu';
-import Cart from './pages/user/Cart';
-import Checkout from './pages/user/Checkout';
-import Confirmation from './pages/user/Confirmation';
-
-// Admin Pages
+// Import Pages
+import AdminLogin from './pages/admin/Login'; // <--- New Import
 import AdminDashboard from './pages/admin/dashboard';
-import AdminLogin from './pages/admin/login';
-import QRGenerator from './pages/admin/QRgenerator';
+import QRGenerator from './pages/admin/QRGenerator';
+import MenuEditor from './pages/admin/menuEditor';
 
 function App() {
     return (
         <Router>
-            <div className="min-h-screen flex flex-col bg-gray-50">
-                {/* The Navbar will show on every page */}
-                <Navbar />
+            <div className="min-h-screen bg-[#0f1115]">
+                <Routes>
+                    {/* ROOT REDIRECT: Send users to Login first */}
+                    <Route path="/" element={<Navigate to="/admin/login" />} />
 
-                <main className="flex-grow">
-                    <Routes>
-                        {/* User Routes */}
-                        <Route path="/" element={<Navigate to="/menu" />} />
-                        <Route path="/menu" element={<Menu />} />
-                        <Route path="/cart" element={<Cart />} />
-                        <Route path="/checkout" element={<Checkout />} />
-                        <Route path="/confirmation" element={<Confirmation />} />
+                    {/* AUTH ROUTE */}
+                    <Route path="/admin/login" element={<AdminLogin />} />
 
-                        {/* Admin Routes */}
-                        <Route path="/admin/login" element={<AdminLogin />} />
-                        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                        <Route path="/admin/qr" element={<QRGenerator />} />
-                    </Routes>
-                </main>
+                    {/* PROTECTED ADMIN ROUTES */}
+                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                    <Route path="/admin/qr-generator" element={<QRGenerator />} />
+                    <Route path="/admin/menu-editor" element={<MenuEditor />} />
 
-                {/* The Footer will show on every page */}
-                <Footer />
+                    {/* FALLBACK */}
+                    <Route path="*" element={<div className="text-white p-10">404 - Page Not Found</div>} />
+                </Routes>
             </div>
         </Router>
     );
