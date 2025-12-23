@@ -1,135 +1,144 @@
 import React from "react";
-import {
-  Facebook,
-  Instagram,
-  Twitter,
-  MapPin,
-  Phone,
-  Mail,
-  ArrowRight,
-} from "lucide-react";
+import { MapPin, Phone } from "lucide-react";
 
 const Footer = () => {
-  return (
-    <footer className="w-full bg-[#0f1115] text-slate-300 border-t border-slate-800 font-sans">
-      {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-6 pt-16 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-          {/* Column 1: Brand & Tagline */}
-          <div className="space-y-4">
-            <h2 className="text-2xl font-black tracking-tight text-white">
-              MANESAR <span className="text-orange-500">CAFE</span>
-            </h2>
-            <p className="text-slate-500 text-sm leading-relaxed max-w-xs">
-              Experience the perfect blend of ambiance and flavor. Fresh food,
-              premium coffee, and unforgettable moments served right at your
-              table.
-            </p>
-            <div className="flex space-x-4 pt-2">
-              <SocialIcon icon={<Instagram size={20} />} href="#" />
-              <SocialIcon icon={<Facebook size={20} />} href="#" />
-              <SocialIcon icon={<Twitter size={20} />} href="#" />
+    return (
+        <footer className="w-full bg-[#0f1115] text-slate-300 border-t border-slate-800 font-sans">
+            <div className="max-w-7xl mx-auto px-6 pt-16 pb-8">
+
+                {/* --- MAIN GRID CONTENT --- */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16 items-start">
+
+                    {/* COLUMN 1: BRAND & ORDER ICONS */}
+                    <div className="space-y-6 flex flex-col items-start md:items-start text-left">
+                        <div className="space-y-4">
+                            <h2 className="text-2xl font-black tracking-tight text-white">
+                                MANESAR <span className="text-orange-500">CAFE</span>
+                            </h2>
+                            <p className="text-slate-500 text-sm leading-relaxed max-w-xs">
+                                Experience the perfect blend of ambiance and flavor. Fresh food,
+                                premium coffee, and unforgettable moments.
+                            </p>
+                        </div>
+
+                        {/* Order Online Icons */}
+                        <div className="flex flex-col gap-3 pt-2">
+                            <p className="text-xs font-bold text-white uppercase tracking-widest opacity-60">
+                                Order Online:
+                            </p>
+
+                            <div className="flex items-center gap-4">
+                                {/* Zomato Logo Button */}
+                                <a
+                                    href="https://www.zomato.com/ncr/manesar-cafe-2-manesar-gurgaon"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:scale-105 transition-transform duration-300"
+                                >
+                                    {/* PATH EXPLANATION:
+                                       Files in 'public/images/' are accessed via '/images/filename'
+                                    */}
+                                    <img
+                                        src="/images/zomatoIcon.png"
+                                        alt="Order on Zomato"
+                                        className="h-10 w-auto rounded-md shadow-lg shadow-red-900/20"
+                                    />
+                                </a>
+
+                                {/* Swiggy Logo Button */}
+                                <a
+                                    href="https://www.swiggy.com/city/gurgaon/manesar-cafe-manesar-imt-manesar-rest945057"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:scale-105 transition-transform duration-300"
+                                >
+                                    {/* Adding bg-white and padding (p-1) to make the Swiggy logo
+                                       pop against the dark footer background
+                                    */}
+                                    <img
+                                        src="/images/swiggyIcon.png"
+                                        alt="Order on Swiggy"
+                                        className="h-10 w-auto bg-white rounded-md p-1 shadow-lg shadow-orange-900/20"
+                                    />
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* COLUMN 2: QUICK LINKS */}
+                    <div className="md:justify-self-center text-left">
+                        <h3 className="text-white font-bold mb-6 tracking-wide text-sm uppercase relative inline-block">
+                            Quick Links
+                            <span className="absolute -bottom-2 left-0 w-8 h-0.5 bg-orange-500 rounded-full"></span>
+                        </h3>
+                        <ul className="space-y-4 text-sm">
+                            <FooterLink href="#">Home</FooterLink>
+                            <FooterLink href="#">Menu</FooterLink>
+                            <FooterLink
+                                href="https://www.google.com/search?sca_esv=283b61cf11016ab2&si=AMgyJEtREmoPL4P1I5IDCfuA8gybfVI2d5Uj7QMwYCZHKDZ-E7wGo_nXQ57SLaksU_w63hnGwTYjpab6BiumO-B7L4-UXQPLcpSoELbYbA3aYLoBmg6VU6P-3AZQ2tljMFHXjHNyRV6IAoicpyufXRmpPXKzJ_wWVg%3D%3D&q=Manesar+Cafe+%26+Restaurant+Reviews&sa=X&ved=2ahUKEwjap5j29tORAxUeTGwGHR2SKJYQ0bkNegQIHhAD&biw=2137&bih=1114&dpr=1.6"
+                                isExternal={true}
+                            >
+                                Feedback
+                            </FooterLink>
+                        </ul>
+                    </div>
+
+                    {/* COLUMN 3: CONTACT INFO */}
+                    <div className="md:justify-self-end text-left">
+                        <h3 className="text-white font-bold mb-6 tracking-wide text-sm uppercase relative inline-block">
+                            Contact Us
+                            <span className="absolute -bottom-2 left-0 w-8 h-0.5 bg-orange-500 rounded-full"></span>
+                        </h3>
+                        <ul className="space-y-5 text-sm">
+                            <li className="flex items-start space-x-3 group">
+                                <MapPin size={20} className="text-orange-500 mt-0.5 shrink-0 group-hover:text-white transition-colors" />
+                                <span className="text-slate-400 leading-relaxed">
+                                    Shop no. 4, Lal Singh Market Chowk <br />
+                                    Near IMT Road, Sector 1B, Manesar <br />
+                                    Gurugram, Haryana 122052
+                                </span>
+                            </li>
+                            <li className="flex items-center space-x-3 group">
+                                <Phone size={20} className="text-orange-500 shrink-0 group-hover:text-white transition-colors" />
+                                <span className="text-slate-400 font-medium tracking-wide">+91 97172 17202</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+
+                {/* --- BOTTOM BAR --- */}
+                <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <p className="text-slate-500 text-sm font-medium">
+                        © {new Date().getFullYear()} Manesar Cafe. All rights reserved.
+                    </p>
+                    <div className="flex space-x-6 text-sm text-slate-500">
+                        <a href="#" className="hover:text-orange-500 transition-colors">
+                            Privacy Policy
+                        </a>
+                        <a href="#" className="hover:text-orange-500 transition-colors">
+                            Terms of Service
+                        </a>
+                    </div>
+                </div>
+
             </div>
-          </div>
-
-          {/* Column 2: Quick Links */}
-          <div>
-            <h3 className="text-white font-bold mb-6 tracking-wide text-sm uppercase">
-              Quick Links
-            </h3>
-            <ul className="space-y-3 text-sm">
-              <FooterLink href="#">Home</FooterLink>
-              <FooterLink href="#">Menu</FooterLink>
-            </ul>
-          </div>
-
-          {/* Column 3: Contact Info */}
-          <div>
-            <h3 className="text-white font-bold mb-6 tracking-wide text-sm uppercase">
-              Contact Us
-            </h3>
-            <ul className="space-y-4 text-sm">
-              <li className="flex items-start space-x-3">
-                <MapPin size={18} className="text-orange-500 mt-0.5 shrink-0" />
-                <span className="text-slate-400">
-                  Shop no. 4, Lal Singh Market Chowk <br />
-                  Near IMT Road, Sector 1B, Manesar
-                  <br />
-                  Gurugram, Haryana 122052
-                </span>
-              </li>
-              <li className="flex items-center space-x-3">
-                <Phone size={18} className="text-orange-500 shrink-0" />
-                <span className="text-slate-400">+91 98765 43210</span>
-              </li>
-              <li className="flex items-center space-x-3">
-                <Mail size={18} className="text-orange-500 shrink-0" />
-                <span className="text-slate-400">hello@manesarcafe.com</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 4: Newsletter */}
-          <div>
-            <h3 className="text-white font-bold mb-6 tracking-wide text-sm uppercase">
-              Stay Updated
-            </h3>
-            <p className="text-slate-500 text-sm mb-4">
-              Subscribe for exclusive offers and new menu drops.
-            </p>
-            <div className="flex flex-col space-y-3">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="bg-[#1a1d23] border border-slate-700 text-white text-sm rounded-lg px-4 py-3 focus:outline-none focus:border-orange-500 transition-colors"
-              />
-              <button className="bg-orange-600 hover:bg-orange-500 text-white text-sm font-bold py-3 rounded-lg transition-colors flex justify-center items-center gap-2">
-                Subscribe <ArrowRight size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Bar: Copyright & Legal */}
-        <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-slate-500 text-sm text-center md:text-left">
-            © {new Date().getFullYear()} CafeQR Scanner System. All rights
-            reserved.
-          </p>
-          <div className="flex space-x-6 text-sm text-slate-500">
-            <a href="#" className="hover:text-white transition-colors">
-              Privacy Policy
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
-              Terms of Service
-            </a>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
+        </footer>
+    );
 };
 
 // Helper Component for Links
-const FooterLink = ({ href, children }) => (
-  <li>
-    <a
-      href={href}
-      className="text-slate-400 hover:text-orange-500 transition-colors duration-200"
-    >
-      {children}
-    </a>
-  </li>
-);
-
-// Helper Component for Social Icons
-const SocialIcon = ({ icon, href }) => (
-  <a
-    href={href}
-    className="w-10 h-10 rounded-full bg-[#1a1d23] border border-slate-800 flex items-center justify-center text-slate-400 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all duration-300"
-  >
-    {icon}
-  </a>
+const FooterLink = ({ href, children, isExternal }) => (
+    <li>
+        <a
+            href={href}
+            target={isExternal ? "_blank" : "_self"}
+            rel={isExternal ? "noopener noreferrer" : ""}
+            className="text-slate-400 hover:text-orange-500 hover:translate-x-1 inline-block transition-all duration-200"
+        >
+            {children}
+        </a>
+    </li>
 );
 
 export default Footer;
