@@ -1,48 +1,58 @@
-// src/App.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 
-// Layout Components
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+// user
+import Navbar from './components/navbar.jsx';
+import Footer from './components/footer.jsx';
 
-// User/Client Pages
-import Menu from './pages/user/Menu';
-import Cart from './pages/user/Cart';
-import Checkout from './pages/user/Checkout';
-import Confirmation from './pages/user/Confirmation';
+//user pages
+import Menu from './pages/user/menu.jsx';
+import Cart from './pages/user/cart.jsx';
+import Checkout from './pages/user/checkout.jsx';
+import Confirmation from './pages/user/confirmation.jsx';
 
 // Admin Pages
+import AdminLogin from './pages/admin/login.jsx';
 import AdminDashboard from './pages/admin/dashboard';
-import AdminLogin from './pages/admin/login';
-import QRGenerator from './pages/admin/QRgenerator';
+import QRGenerator from './pages/admin/QRgenerator.jsx'; // Fixed casing
+import MenuEditor from './pages/admin/menuEditor.jsx';   // Restored missing page
+
+// 1. Create a specific Layout for Customers so their Navbar doesn't invade Admin pages
+const UserLayout = () => {
+    return (
+        <div className="min-h-screen flex flex-col bg-gray-50">
+            <Navbar /> {/* Friend's Navbar */}
+            <main className="flex-grow">
+                <Outlet /> {/* This renders the child route (Menu, Cart, etc.) */}
+            </main>
+            <Footer /> {/* Friend's Footer */}
+        </div>
+    );
+};
 
 function App() {
     return (
         <Router>
-            <div className="min-h-screen flex flex-col bg-gray-50">
-                {/* The Navbar will show on every page */}
-                <Navbar />
+            <Routes>
+                {/* --- ADMIN ROUTES (No Navbar/Footer Wrapper) --- */}
+                {/* These pages handle their own "AdminNavbar" internally */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/qr-generator" element={<QRGenerator />} />
+                <Route path="/admin/menu-editor" element={<MenuEditor />} />
 
-                <main className="flex-grow">
-                    <Routes>
-                        {/* User Routes */}
-                        <Route path="/" element={<Navigate to="/menu" />} />
-                        <Route path="/menu" element={<Menu />} />
-                        <Route path="/cart" element={<Cart />} />
-                        <Route path="/checkout" element={<Checkout />} />
-                        <Route path="/confirmation" element={<Confirmation />} />
+                {/* --- USER ROUTES (Wrapped in UserLayout) --- */}
+                <Route element={<UserLayout />}>
+                    <Route path="/" element={<Navigate to="/menu" />} />
+                    <Route path="/menu" element={<Menu />} />
+                    <Route path="/cart" element={<Cart />} />
+                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/confirmation" element={<Confirmation />} />
+                </Route>
 
-                        {/* Admin Routes */}
-                        <Route path="/admin/login" element={<AdminLogin />} />
-                        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                        <Route path="/admin/qr" element={<QRGenerator />} />
-                    </Routes>
-                </main>
-
-                {/* The Footer will show on every page */}
-                <Footer />
-            </div>
+                {/* 404 Fallback */}
+                <Route path="*" element={<div>Page Not Found</div>} />
+            </Routes>
         </Router>
     );
 }
