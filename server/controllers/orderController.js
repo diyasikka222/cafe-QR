@@ -1,44 +1,53 @@
 const Order = require("../models/Order");
 
-// @desc    Get all orders
-// @route   GET /api/orders
-exports.getOrders = async (req, res) => {
+// CREATE ORDER
+const createOrder = async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 });
-    res.status(200).json(orders);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    const { tableNumber, items, total } = req.body;
+
+    const order = await Order.create({
+      tableNumber,
+      items,
+      total,
+    });
+
+    // 🔥 SOCKET EMIT
+    const io = req.app.get("io");
+    io.emit("new-order", order);
+
+    res.status(201).json(order);
+  } catch (err) {
+    res.status(500).json({ message: "Order creation failed" });
   }
 };
 
-// @desc    Create new order
-// @route   POST /api/orders
-exports.createOrder = async (req, res) => {
-  try {
-    const newOrder = new Order(req.body);
-    const savedOrder = await newOrder.save();
+// GET ACTIVE ORDERS
+const getOrders = async (req, res) => {
+  const orders = await Order.find({ status: { $ne: "Served" } }).sort({
+    createdAt: -1,
+  });
 
-    // Trigger Socket.io alert to Admin Dashboard
-    const io = req.app.get("socketio");
-    io.emit("new_order_alert", savedOrder);
-
-    res.status(201).json(savedOrder);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
+  res.json(orders);
 };
 
-// @desc    Update status
-// @route   PATCH /api/orders/:id
-exports.updateStatus = async (req, res) => {
-  try {
-    const updatedOrder = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status: req.body.status },
-      { new: true },
-    );
-    res.status(200).json(updatedOrder);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
+// UPDATE STATUS
+const updateOrderStatus = async (req, res) => {
+  const order = await Order.findById(req.params.id);
+  if (!order) return res.status(404).json({ message: "Order not found" });
+
+  order.status = order.status === "New" ? "Preparing" : "Served";
+
+  await order.save();
+
+  // 🔥 SOCKET EMIT
+  const io = req.app.get("io");
+  io.emit("order-updated", order);
+
+  res.json(order);
+};
+
+module.exports = {
+  createOrder,
+  getOrders,
+  updateOrderStatus,
 };

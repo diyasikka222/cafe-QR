@@ -9,28 +9,53 @@ require("dotenv").config();
 const app = express();
 const server = http.createServer(app);
 
-// 1. Connect to Database
+/* ===========================
+   1. DATABASE CONNECTION
+=========================== */
 connectDB();
 
-// 2. Middlewares
-app.use(cors());
+/* ===========================
+   2. MIDDLEWARES
+=========================== */
+app.use(
+  cors({
+    origin: ["http://localhost:5173"], // customer + admin frontend
+    methods: ["GET", "POST", "PATCH"],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 
-// 3. Socket.io setup
+/* ===========================
+   3. SOCKET.IO SETUP
+=========================== */
 const io = new Server(server, {
-  cors: { origin: "http://localhost:5173", methods: ["GET", "POST"] },
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PATCH"],
+  },
 });
 
-// Pass 'io' to express so controllers can use it
-app.set("socketio", io);
+// Make io accessible inside routes/controllers
+app.set("io", io);
 
 io.on("connection", (socket) => {
-  console.log(`📡 New Socket: ${socket.id}`);
-  socket.on("disconnect", () => console.log("🔌 Disconnected"));
+  console.log(`📡 Kitchen connected: ${socket.id}`);
+
+  socket.on("disconnect", () => {
+    console.log(`🔌 Kitchen disconnected: ${socket.id}`);
+  });
 });
 
-// 4. Routes
+/* ===========================
+   4. ROUTES
+=========================== */
 app.use("/api/orders", orderRoutes);
 
+/* ===========================
+   5. SERVER START
+=========================== */
 const PORT = process.env.PORT || 5001;
-server.listen(PORT, () => console.log(`🚀 Server on port ${PORT}`));
+server.listen(PORT, () =>
+  console.log(`🚀 Server running on http://localhost:${PORT}`),
+);

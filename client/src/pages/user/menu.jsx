@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useCart } from "../../contexts/cartContext";
 import { useTable } from "../../contexts/tableContext";
 import { Plus, Minus, X, ShoppingCart, CheckCircle, Flame } from "lucide-react";
+import axios from "axios";
 
 const Menu = () => {
   const {
@@ -79,12 +80,30 @@ const Menu = () => {
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
+
     setIsSending(true);
-    setTimeout(() => {
-      setIsSending(false);
+
+    try {
+      await axios.post("http://localhost:5001/api/orders", {
+        tableNumber: tableNumber || "05",
+        items: cart.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        total: getTotal(),
+      });
+
       setIsModalOpen(false);
       setIsSuccessModalOpen(true);
-    }, 1200);
+      clearCart();
+    } catch (err) {
+      console.error("Order failed", err);
+      alert("Failed to send order");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
