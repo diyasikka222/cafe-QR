@@ -1,114 +1,121 @@
 import React, { useState } from "react";
+import { useSearchParams } from "react-router-dom"; // <--- CHANGED THIS
 import { useCart } from "../../contexts/cartContext";
-import { useTable } from "../../contexts/tableContext";
 import { Plus, Minus, X, ShoppingCart, CheckCircle, Flame } from "lucide-react";
 import axios from "axios";
 
 const Menu = () => {
-  const {
-    addToCart,
-    removeFromCart,
-    getItemQuantity,
-    getTotal,
-    cart,
-    clearCart,
-  } = useCart();
-  const { tableNumber } = useTable();
+    // 1. GET TABLE NUMBER FROM QUERY STRING (?table=0)
+    const [searchParams] = useSearchParams();
+    const tableFromUrl = searchParams.get("table");
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-  const [isSending, setIsSending] = useState(false);
+    // Default to "05" (or any default) if url is just /menu
+    const currentTable = tableFromUrl || "05";
 
-  const menuItems = [
-    {
-      id: 1,
-      name: "Classic Margherita",
-      price: 80,
-      image: "🍕",
-      desc: "San Marzano tomatoes, fresh mozzarella, and aromatic basil.",
-    },
-    {
-      id: 2,
-      name: "Aloo Tikki Burger",
-      price: 50,
-      image: "🍔",
-      desc: "Crispy spiced potato patty with house-made mint glaze.",
-    },
-    {
-      id: 3,
-      name: "Veg Steamed Momos",
-      price: 60,
-      image: "🥟",
-      desc: "Hand-rolled dumplings with spicy roasted tomato dip.",
-    },
-    {
-      id: 4,
-      name: "Truffle Fries",
-      price: 110,
-      image: "🍟",
-      desc: "Golden fries drizzled with truffle oil and parmesan.",
-    },
-    {
-      id: 5,
-      name: "Iced Caramel Latte",
-      price: 95,
-      image: "☕",
-      desc: "Slow-dripped arabica coffee with silky caramel.",
-    },
-    {
-      id: 6,
-      name: "Paneer Tikka Wrap",
-      price: 120,
-      image: "🌯",
-      desc: "Grilled cottage cheese with peppers and spicy sauce.",
-    },
-    {
-      id: 7,
-      name: "Spicy Chicken Wings",
-      price: 180,
-      image: "🍗",
-      desc: "Tossed in fiery peri-peri sauce.",
-    },
-    {
-      id: 8,
-      name: "Hazelnut Brownie",
-      price: 150,
-      image: "🍫",
-      desc: "Served warm with a scoop of vanilla bean ice cream.",
-    },
-  ];
+    const {
+        addToCart,
+        removeFromCart,
+        getItemQuantity,
+        getTotal,
+        cart,
+        clearCart,
+    } = useCart();
 
-  const handleCheckout = async () => {
-    if (cart.length === 0) return;
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+    const [isSending, setIsSending] = useState(false);
 
-    setIsSending(true);
+    const menuItems = [
+        {
+            id: 1,
+            name: "Classic Margherita",
+            price: 80,
+            image: "🍕",
+            desc: "San Marzano tomatoes, fresh mozzarella, and aromatic basil.",
+        },
+        {
+            id: 2,
+            name: "Aloo Tikki Burger",
+            price: 50,
+            image: "🍔",
+            desc: "Crispy spiced potato patty with house-made mint glaze.",
+        },
+        {
+            id: 3,
+            name: "Veg Steamed Momos",
+            price: 60,
+            image: "🥟",
+            desc: "Hand-rolled dumplings with spicy roasted tomato dip.",
+        },
+        {
+            id: 4,
+            name: "Truffle Fries",
+            price: 110,
+            image: "🍟",
+            desc: "Golden fries drizzled with truffle oil and parmesan.",
+        },
+        {
+            id: 5,
+            name: "Iced Caramel Latte",
+            price: 95,
+            image: "☕",
+            desc: "Slow-dripped arabica coffee with silky caramel.",
+        },
+        {
+            id: 6,
+            name: "Paneer Tikka Wrap",
+            price: 120,
+            image: "🌯",
+            desc: "Grilled cottage cheese with peppers and spicy sauce.",
+        },
+        {
+            id: 7,
+            name: "Spicy Chicken Wings",
+            price: 180,
+            image: "🍗",
+            desc: "Tossed in fiery peri-peri sauce.",
+        },
+        {
+            id: 8,
+            name: "Hazelnut Brownie",
+            price: 150,
+            image: "🍫",
+            desc: "Served warm with a scoop of vanilla bean ice cream.",
+        },
+    ];
 
-    try {
-      await axios.post("http://localhost:5001/api/orders", {
-        tableNumber: tableNumber || "05",
-        items: cart.map((item) => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-        })),
-        total: getTotal(),
-      });
+    const handleCheckout = async () => {
+        if (cart.length === 0) return;
 
-      setIsModalOpen(false);
-      setIsSuccessModalOpen(true);
-      clearCart();
-    } catch (err) {
-      console.error("Order failed", err);
-      alert("Failed to send order");
-    } finally {
-      setIsSending(false);
-    }
-  };
+        setIsSending(true);
 
-  return (
-    <div className="lumiere-app">
-      <style>{`
+        try {
+            await axios.post("http://localhost:5001/api/orders", {
+                // 2. USE THE DYNAMIC TABLE VARIABLE HERE
+                tableNumber: currentTable,
+                items: cart.map((item) => ({
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                })),
+                total: getTotal(),
+            });
+
+            setIsModalOpen(false);
+            setIsSuccessModalOpen(true);
+            clearCart();
+        } catch (err) {
+            console.error("Order failed", err);
+            alert("Failed to send order");
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    return (
+        <div className="lumiere-app">
+            <style>{`
         /* --- GLOBAL RESET --- */
         :root {
           --brand: #f97316;
@@ -284,7 +291,6 @@ const Menu = () => {
           bottom: 20px;
           left: 50%;
           transform: translateX(-50%);
-          /* Calculated width with exact padding subtraction */
           width: calc(100% - 32px);
           max-width: 450px;
           box-sizing: border-box;
@@ -328,255 +334,256 @@ const Menu = () => {
         }
       `}</style>
 
-      {/* HEADER */}
-      <header className="header">
-        <div className="logo">
-          MANESAR <span style={{ color: "var(--brand)" }}>CAFE</span>
-        </div>
-        <div
-          style={{
-            fontSize: "10px",
-            fontWeight: 900,
-            color: "var(--brand)",
-            background: "rgba(249,115,22,0.1)",
-            padding: "6px 14px",
-            borderRadius: "20px",
-            border: "1px solid rgba(249,115,22,0.2)",
-          }}
-        >
-          TABLE {tableNumber || "05"}
-        </div>
-      </header>
-
-      {/* MENU GRID */}
-      <main className="item-grid">
-        {menuItems.map((item) => {
-          const qty = getItemQuantity(item.id);
-          return (
-            <div key={item.id} className="card">
-              <div className="img-container">
-                <div className="bestseller-tag">
-                  <Flame size={10} fill="currentColor" /> BESTSELLER
+            {/* HEADER */}
+            <header className="header">
+                <div className="logo">
+                    MANESAR <span style={{ color: "var(--brand)" }}>CAFE</span>
                 </div>
-                {item.image}
-              </div>
-
-              <div className="card-content">
-                <h3 className="card-title">{item.name}</h3>
-                <p className="card-desc">{item.desc}</p>
-
-                <div className="price-row">
-                  <span className="price">₹{item.price}</span>
-                  {qty === 0 ? (
-                    <button className="add-btn" onClick={() => addToCart(item)}>
-                      ADD
-                    </button>
-                  ) : (
-                    <div className="qty-control">
-                      <button
-                        className="q-btn"
-                        onClick={() => removeFromCart(item.id)}
-                      >
-                        <Minus size={14} />
-                      </button>
-                      <span className="q-val">{qty}</span>
-                      <button className="q-btn" onClick={() => addToCart(item)}>
-                        <Plus size={14} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </main>
-
-      {/* FLOATING CART - HIDDEN WHEN MODAL IS OPEN */}
-      {cart.length > 0 && !isModalOpen && !isSuccessModalOpen && (
-        <div className="cart-bar">
-          <div>
-            <div
-              style={{
-                fontSize: "10px",
-                fontWeight: 800,
-                color: "#666",
-                letterSpacing: "0.5px",
-              }}
-            >
-              TOTAL
-            </div>
-            <div style={{ fontSize: "20px", fontWeight: 900 }}>
-              ₹{getTotal()}
-            </div>
-          </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            style={{
-              background: "black",
-              color: "white",
-              border: "none",
-              padding: "10px 24px",
-              borderRadius: "14px",
-              fontWeight: 800,
-              fontSize: "13px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              whiteSpace: "nowrap",
-            }}
-          >
-            VIEW CART <ShoppingCart size={14} />
-          </button>
-        </div>
-      )}
-
-      {/* CART MODAL */}
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="close-btn" onClick={() => setIsModalOpen(false)}>
-              <X size={16} />
-            </div>
-            <h2
-              style={{
-                fontSize: "20px",
-                fontWeight: 900,
-                marginBottom: "20px",
-              }}
-            >
-              Your Order
-            </h2>
-
-            <div style={{ maxHeight: "50vh", overflowY: "auto" }}>
-              {cart.map((item) => (
                 <div
-                  key={item.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: "16px",
-                    paddingBottom: "16px",
-                    borderBottom: "1px solid rgba(255,255,255,0.05)",
-                  }}
+                    style={{
+                        fontSize: "10px",
+                        fontWeight: 900,
+                        color: "var(--brand)",
+                        background: "rgba(249,115,22,0.1)",
+                        padding: "6px 14px",
+                        borderRadius: "20px",
+                        border: "1px solid rgba(249,115,22,0.2)",
+                    }}
                 >
-                  <div style={{ display: "flex", gap: "12px" }}>
-                    <div
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        background: "#222",
-                        borderRadius: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "20px",
-                      }}
-                    >
-                      {item.image}
-                    </div>
+                    {/* DISPLAY THE URL TABLE NUMBER */}
+                    TABLE {currentTable}
+                </div>
+            </header>
+
+            {/* MENU GRID */}
+            <main className="item-grid">
+                {menuItems.map((item) => {
+                    const qty = getItemQuantity(item.id);
+                    return (
+                        <div key={item.id} className="card">
+                            <div className="img-container">
+                                <div className="bestseller-tag">
+                                    <Flame size={10} fill="currentColor" /> BESTSELLER
+                                </div>
+                                {item.image}
+                            </div>
+
+                            <div className="card-content">
+                                <h3 className="card-title">{item.name}</h3>
+                                <p className="card-desc">{item.desc}</p>
+
+                                <div className="price-row">
+                                    <span className="price">₹{item.price}</span>
+                                    {qty === 0 ? (
+                                        <button className="add-btn" onClick={() => addToCart(item)}>
+                                            ADD
+                                        </button>
+                                    ) : (
+                                        <div className="qty-control">
+                                            <button
+                                                className="q-btn"
+                                                onClick={() => removeFromCart(item.id)}
+                                            >
+                                                <Minus size={14} />
+                                            </button>
+                                            <span className="q-val">{qty}</span>
+                                            <button className="q-btn" onClick={() => addToCart(item)}>
+                                                <Plus size={14} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </main>
+
+            {/* FLOATING CART - HIDDEN WHEN MODAL IS OPEN */}
+            {cart.length > 0 && !isModalOpen && !isSuccessModalOpen && (
+                <div className="cart-bar">
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: "14px" }}>
-                        {item.name}
-                      </div>
-                      <div style={{ fontSize: "12px", color: "#999" }}>
-                        ₹{item.price}
-                      </div>
+                        <div
+                            style={{
+                                fontSize: "10px",
+                                fontWeight: 800,
+                                color: "#666",
+                                letterSpacing: "0.5px",
+                            }}
+                        >
+                            TOTAL
+                        </div>
+                        <div style={{ fontSize: "20px", fontWeight: 900 }}>
+                            ₹{getTotal()}
+                        </div>
                     </div>
-                  </div>
-                  <div className="qty-control" style={{ height: "32px" }}>
                     <button
-                      className="q-btn"
-                      onClick={() => removeFromCart(item.id)}
+                        onClick={() => setIsModalOpen(true)}
+                        style={{
+                            background: "black",
+                            color: "white",
+                            border: "none",
+                            padding: "10px 24px",
+                            borderRadius: "14px",
+                            fontWeight: 800,
+                            fontSize: "13px",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            whiteSpace: "nowrap",
+                        }}
                     >
-                      <Minus size={12} />
+                        VIEW CART <ShoppingCart size={14} />
                     </button>
-                    <span
-                      className="q-val"
-                      style={{ fontSize: "12px", width: "24px" }}
-                    >
+                </div>
+            )}
+
+            {/* CART MODAL */}
+            {isModalOpen && (
+                <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="close-btn" onClick={() => setIsModalOpen(false)}>
+                            <X size={16} />
+                        </div>
+                        <h2
+                            style={{
+                                fontSize: "20px",
+                                fontWeight: 900,
+                                marginBottom: "20px",
+                            }}
+                        >
+                            Your Order
+                        </h2>
+
+                        <div style={{ maxHeight: "50vh", overflowY: "auto" }}>
+                            {cart.map((item) => (
+                                <div
+                                    key={item.id}
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        marginBottom: "16px",
+                                        paddingBottom: "16px",
+                                        borderBottom: "1px solid rgba(255,255,255,0.05)",
+                                    }}
+                                >
+                                    <div style={{ display: "flex", gap: "12px" }}>
+                                        <div
+                                            style={{
+                                                width: "40px",
+                                                height: "40px",
+                                                background: "#222",
+                                                borderRadius: "8px",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                fontSize: "20px",
+                                            }}
+                                        >
+                                            {item.image}
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: 700, fontSize: "14px" }}>
+                                                {item.name}
+                                            </div>
+                                            <div style={{ fontSize: "12px", color: "#999" }}>
+                                                ₹{item.price}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="qty-control" style={{ height: "32px" }}>
+                                        <button
+                                            className="q-btn"
+                                            onClick={() => removeFromCart(item.id)}
+                                        >
+                                            <Minus size={12} />
+                                        </button>
+                                        <span
+                                            className="q-val"
+                                            style={{ fontSize: "12px", width: "24px" }}
+                                        >
                       {item.quantity}
                     </span>
-                    <button className="q-btn" onClick={() => addToCart(item)}>
-                      <Plus size={12} />
-                    </button>
-                  </div>
+                                        <button className="q-btn" onClick={() => addToCart(item)}>
+                                            <Plus size={12} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={handleCheckout}
+                            disabled={isSending}
+                            style={{
+                                width: "100%",
+                                padding: "16px",
+                                marginTop: "20px",
+                                background: "var(--brand)",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "14px",
+                                fontWeight: 900,
+                                fontSize: "14px",
+                                cursor: isSending ? "not-allowed" : "pointer",
+                                opacity: isSending ? 0.7 : 1,
+                            }}
+                        >
+                            {isSending ? "SENDING ORDER..." : `PLACE ORDER • ₹${getTotal()}`}
+                        </button>
+                    </div>
                 </div>
-              ))}
-            </div>
+            )}
 
-            <button
-              onClick={handleCheckout}
-              disabled={isSending}
-              style={{
-                width: "100%",
-                padding: "16px",
-                marginTop: "20px",
-                background: "var(--brand)",
-                color: "white",
-                border: "none",
-                borderRadius: "14px",
-                fontWeight: 900,
-                fontSize: "14px",
-                cursor: isSending ? "not-allowed" : "pointer",
-                opacity: isSending ? 0.7 : 1,
-              }}
-            >
-              {isSending ? "SENDING ORDER..." : `PLACE ORDER • ₹${getTotal()}`}
-            </button>
-          </div>
+            {/* SUCCESS MODAL */}
+            {isSuccessModalOpen && (
+                <div className="modal-overlay">
+                    <div
+                        className="modal-content"
+                        style={{ textAlign: "center", padding: "40px 20px" }}
+                    >
+                        <CheckCircle
+                            size={64}
+                            color="#22c55e"
+                            style={{ margin: "0 auto 20px auto" }}
+                        />
+                        <h2
+                            style={{ fontSize: "24px", fontWeight: 900, marginBottom: "8px" }}
+                        >
+                            Order Sent!
+                        </h2>
+                        <p
+                            style={{
+                                color: "#999",
+                                fontSize: "14px",
+                                marginBottom: "30px",
+                            }}
+                        >
+                            The kitchen has received your order for Table {currentTable}.
+                        </p>
+                        <button
+                            onClick={() => {
+                                setIsSuccessModalOpen(false);
+                                clearCart();
+                            }}
+                            style={{
+                                width: "100%",
+                                padding: "16px",
+                                background: "#fff",
+                                color: "#000",
+                                border: "none",
+                                borderRadius: "14px",
+                                fontWeight: 900,
+                            }}
+                        >
+                            BACK TO MENU
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
-      )}
-
-      {/* SUCCESS MODAL */}
-      {isSuccessModalOpen && (
-        <div className="modal-overlay">
-          <div
-            className="modal-content"
-            style={{ textAlign: "center", padding: "40px 20px" }}
-          >
-            <CheckCircle
-              size={64}
-              color="#22c55e"
-              style={{ margin: "0 auto 20px auto" }}
-            />
-            <h2
-              style={{ fontSize: "24px", fontWeight: 900, marginBottom: "8px" }}
-            >
-              Order Sent!
-            </h2>
-            <p
-              style={{
-                color: "#999",
-                fontSize: "14px",
-                marginBottom: "30px",
-              }}
-            >
-              The kitchen has received your order for Table {tableNumber}.
-            </p>
-            <button
-              onClick={() => {
-                setIsSuccessModalOpen(false);
-                clearCart();
-              }}
-              style={{
-                width: "100%",
-                padding: "16px",
-                background: "#fff",
-                color: "#000",
-                border: "none",
-                borderRadius: "14px",
-                fontWeight: 900,
-              }}
-            >
-              BACK TO MENU
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default Menu;
