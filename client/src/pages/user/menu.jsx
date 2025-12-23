@@ -1,515 +1,565 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { useCart } from "../../contexts/cartContext";
-import { Plus, Minus, X, ShoppingCart, Flame } from "lucide-react";
+import { Plus, Minus, ShoppingCart, X, ArrowRight } from "lucide-react";
 
 const Menu = () => {
-    // 1. GET TABLE NUMBER & NAVIGATE
-    const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-    const tableFromUrl = searchParams.get("table");
-    const currentTable = tableFromUrl || "05";
+  const tableFromUrl = searchParams.get("table");
+  const currentTable = tableFromUrl || "05";
 
-    const {
-        addToCart,
-        removeFromCart,
-        getItemQuantity,
-        getTotal,
-        cart,
-    } = useCart();
+  const { addToCart, removeFromCart, getItemQuantity, getTotal, cart } =
+    useCart();
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
+  const [menuItems, setMenuItems] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // 2. FULL MENU ITEMS LIST
-    const menuItems = [
-        {
-            id: 1,
-            name: "Classic Margherita",
-            price: 80,
-            image: "🍕",
-            desc: "San Marzano tomatoes, fresh mozzarella, and aromatic basil.",
-        },
-        {
-            id: 2,
-            name: "Aloo Tikki Burger",
-            price: 50,
-            image: "🍔",
-            desc: "Crispy spiced potato patty with house-made mint glaze.",
-        },
-        {
-            id: 3,
-            name: "Veg Steamed Momos",
-            price: 60,
-            image: "🥟",
-            desc: "Hand-rolled dumplings with spicy roasted tomato dip.",
-        },
-        {
-            id: 4,
-            name: "Truffle Fries",
-            price: 110,
-            image: "🍟",
-            desc: "Golden fries drizzled with truffle oil and parmesan.",
-        },
-        {
-            id: 5,
-            name: "Iced Caramel Latte",
-            price: 95,
-            image: "☕",
-            desc: "Slow-dripped arabica coffee with silky caramel.",
-        },
-        {
-            id: 6,
-            name: "Paneer Tikka Wrap",
-            price: 120,
-            image: "🌯",
-            desc: "Grilled cottage cheese with peppers and spicy sauce.",
-        },
-        {
-            id: 7,
-            name: "Spicy Chicken Wings",
-            price: 180,
-            image: "🍗",
-            desc: "Tossed in fiery peri-peri sauce.",
-        },
-        {
-            id: 8,
-            name: "Hazelnut Brownie",
-            price: 150,
-            image: "🍫",
-            desc: "Served warm with a scoop of vanilla bean ice cream.",
-        },
-    ];
+  /* ===============================
+        FETCH MENU FROM DB
+  =============================== */
+  useEffect(() => {
+    axios
+      .get("http://localhost:5001/api/menu")
+      .then((res) => {
+        setMenuItems(res.data.filter((i) => i.available));
+      })
+      .catch(console.error);
+  }, []);
 
-    // 3. NEW CHECKOUT NAVIGATION LOGIC
-    const handleProceedToCheckout = () => {
-        if (cart.length === 0) return;
-        setIsModalOpen(false);
-        navigate(`/checkout?table=${currentTable}`);
-    };
+  /* ===============================
+        NAVIGATION LOGIC
+  =============================== */
+  const handleProceedToCheckout = () => {
+    if (cart.length === 0) return;
+    setIsModalOpen(false);
+    navigate(`/checkout?table=${currentTable}`);
+  };
 
-    return (
-        <div className="lumiere-app">
-            {/* 4. RESTORED STYLES */}
-            <style>{`
-        /* --- GLOBAL RESET --- */
+  /* ===============================
+        CATEGORY FILTER
+  =============================== */
+  const categories = [
+    "All",
+    ...new Set(menuItems.map((item) => item.category)),
+  ];
+
+  const filteredItems =
+    selectedCategory === "All"
+      ? menuItems
+      : menuItems.filter((i) => i.category === selectedCategory);
+
+  return (
+    <div className="lumiere-app">
+      <style>{`
         :root {
           --brand: #f97316;
           --bg: #0f1115;
           --surface: #1a1d23;
-          --border: #1e293b;
+          --surface-highlight: #23272f;
+          --border: #2d3340;
           --text-main: #f1f5f9;
           --text-muted: #94a3b8;
         }
 
+        /* --- CRITICAL FIX FOR WHITE SPACE --- */
         html, body, #root {
-          width: 100%;
+          background-color: var(--bg) !important;
           min-height: 100vh;
           margin: 0;
           padding: 0;
-          background-color: var(--bg) !important;
-          overflow-x: hidden;
+          overflow-x: hidden; /* Prevent horizontal scroll white space */
         }
 
         .lumiere-app {
-          background: var(--bg);
+          background-color: var(--bg);
           color: var(--text-main);
           min-height: 100vh;
           width: 100%;
+          padding-bottom: 120px; /* Space for floating cart */
           font-family: 'Inter', system-ui, sans-serif;
-          padding-bottom: 120px;
-          position: absolute;
-          top: 0;
-          left: 0;
-        }
-
-        /* --- HEADER --- */
-        .header {
-          padding: 20px 5%;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          position: sticky;
-          top: 0;
-          background: rgba(15, 17, 21, 0.9);
-          backdrop-filter: blur(12px);
-          z-index: 50;
-          border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .logo { font-size: 1.5rem; font-weight: 900; letter-spacing: 1px; color: white; }
-
-        /* --- RESPONSIVE GRID --- */
-        .item-grid {
-          display: grid;
-          padding: 30px 5%;
-          gap: 24px;
-          grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-          max-width: 1600px;
-          margin: 0 auto;
-        }
-
-        /* --- CARD DESIGN --- */
-        .card {
-          background: var(--surface);
-          border-radius: 20px;
-          border: 1px solid var(--border);
-          overflow: hidden;
+          position: relative;
           display: flex;
           flex-direction: column;
-          transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        /* --- GRID & CARD STYLES --- */
+        .item-grid {
+          display: grid;
+          padding: 20px 5%;
+          gap: 32px;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          max-width: 1600px;
+          margin: 0 auto;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .card {
+          background: var(--surface);
+          border-radius: 24px;
+          border: 1px solid var(--border);
+          display: flex;
+          flex-direction: column;
+          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+          padding: 12px;
           position: relative;
         }
+
         .card:hover {
           border-color: var(--brand);
-          transform: translateY(-4px);
+          transform: translateY(-6px);
+          box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+          background: var(--surface-highlight);
         }
 
         .img-container {
-          height: 140px;
+          height: 240px;
           width: 100%;
-          background: radial-gradient(circle at center, #23272f 0%, #14161b 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 56px;
+          border-radius: 18px;
+          overflow: hidden;
           position: relative;
+          background: #000;
+          border: 1px solid rgba(255,255,255,0.08);
         }
 
-        .bestseller-tag {
-          position: absolute;
-          top: 10px; left: 10px;
-          background: rgba(239, 68, 68, 0.15);
-          color: #ef4444;
-          border: 1px solid rgba(239, 68, 68, 0.3);
-          font-size: 10px; font-weight: 800;
-          padding: 4px 10px;
-          border-radius: 20px;
-          display: flex; align-items: center; gap: 4px;
-          backdrop-filter: blur(4px);
+        .img-container img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.5s ease;
+        }
+
+        .card:hover .img-container img {
+          transform: scale(1.05);
         }
 
         .card-content {
-          padding: 18px;
-          flex-grow: 1;
+          padding: 16px 8px 8px 8px;
           display: flex;
           flex-direction: column;
+          flex-grow: 1;
         }
 
         .card-title {
-          font-size: 16px;
+          font-size: 1.25rem;
           font-weight: 800;
           margin-bottom: 6px;
-          color: white;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          line-height: 1.2;
         }
 
         .card-desc {
-          font-size: 13px;
+          font-size: 0.9rem;
           color: var(--text-muted);
-          line-height: 1.5;
-          margin-bottom: 20px;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-          height: 40px;
+          margin-bottom: 24px;
+          font-weight: 500;
         }
 
-        /* --- ACTION AREA --- */
         .price-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-top: auto;
         }
-        .price { font-size: 18px; font-weight: 800; color: white; }
+
+        .price {
+          font-size: 1.2rem;
+          font-weight: 700;
+          color: var(--text-main);
+        }
 
         .add-btn {
-          padding: 8px 24px;
-          background: transparent;
+          padding: 10px 28px;
           border: 1px solid var(--border);
           color: var(--brand);
+          background: rgba(249, 115, 22, 0.1);
+          border-radius: 14px;
           font-weight: 800;
-          font-size: 12px;
-          border-radius: 10px;
+          font-size: 0.9rem;
           cursor: pointer;
           transition: 0.2s;
         }
-        .add-btn:hover { background: var(--brand); color: white; border-color: var(--brand); }
+
+        .add-btn:hover {
+          background: var(--brand);
+          color: #000;
+          border-color: var(--brand);
+        }
 
         .qty-control {
           display: flex;
           align-items: center;
-          background: var(--surface);
+          background: var(--surface-highlight);
           border: 1px solid var(--border);
-          border-radius: 10px;
-          padding: 2px;
-        }
-        .q-btn {
-          width: 28px; height: 28px;
-          display: flex; align-items: center; justify-content: center;
-          background: transparent;
-          color: white; border: none;
-          cursor: pointer; border-radius: 8px;
-        }
-        .q-btn:hover { background: rgba(255,255,255,0.05); }
-        .q-val {
-          width: 30px; text-align: center;
-          font-weight: 800; font-size: 14px;
-          color: var(--brand);
+          border-radius: 14px;
+          padding: 4px;
         }
 
-        /* --- FIXED CART BAR --- */
+        .q-btn {
+          width: 32px;
+          height: 32px;
+          border: none;
+          background: transparent;
+          color: #fff;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+        }
+
+        .q-btn:hover {
+          background: rgba(255,255,255,0.1);
+        }
+
+        .q-val {
+          width: 36px;
+          text-align: center;
+          color: var(--brand);
+          font-weight: 800;
+          font-size: 1.1rem;
+        }
+
+        /* --- CATEGORY FILTER --- */
+        .category-scroll {
+          padding: 20px 5% 0 5%;
+          display: flex;
+          gap: 12px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .cat-btn {
+          padding: 8px 20px;
+          border-radius: 100px;
+          border: 1px solid var(--border);
+          background: transparent;
+          color: var(--text-muted);
+          font-weight: 600;
+          font-size: 14px;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: 0.2s;
+        }
+
+        .cat-btn.active {
+          background: var(--text-main);
+          color: #000;
+          border-color: var(--text-main);
+          font-weight: 800;
+        }
+
+        /* --- CART BAR --- */
         .cart-bar {
           position: fixed;
-          bottom: 20px;
+          bottom: 30px;
           left: 50%;
           transform: translateX(-50%);
-          width: calc(100% - 32px);
-          max-width: 450px;
-          box-sizing: border-box;
-          background: white;
-          color: black;
-          padding: 12px 20px;
-          border-radius: 16px;
+          background: rgba(255,255,255,0.1);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.2);
+          color: #fff;
+          padding: 16px 24px;
+          border-radius: 24px;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-          z-index: 1000;
-          margin-bottom: env(safe-area-inset-bottom);
+          width: calc(100% - 48px);
+          max-width: 500px;
+          z-index: 900;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         }
 
-        /* --- MODAL --- */
-        .modal-overlay {
-          position: fixed; inset: 0;
-          background: rgba(0,0,0,0.85);
-          backdrop-filter: blur(8px);
-          z-index: 200;
-          display: flex; justify-content: center; align-items: center;
-          padding: 20px;
+        .checkout-btn {
+          background: var(--brand);
+          color: #000;
+          border: none;
+          padding: 12px 28px;
+          border-radius: 16px;
+          font-weight: 800;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          transition: 0.2s;
         }
+        .checkout-btn:hover {
+          transform: scale(1.02);
+          box-shadow: 0 0 20px rgba(249, 115, 22, 0.4);
+        }
+
+        /* --- MODAL STYLES --- */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0,0,0,0.7);
+          backdrop-filter: blur(8px);
+          z-index: 2000;
+          display: flex;
+          justify-content: center;
+          align-items: flex-end;
+        }
+
+        @media (min-width: 768px) {
+          .modal-overlay {
+             align-items: center;
+          }
+        }
+
         .modal-content {
-          background: #13161b;
-          width: 100%; max-width: 480px;
-          border-radius: 24px;
+          background: #14161b;
+          width: 100%;
+          max-width: 500px;
+          border-radius: 24px 24px 0 0;
           border: 1px solid var(--border);
           padding: 24px;
-          position: relative;
-          box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+          animation: slideUp 0.3s ease;
+          max-height: 85vh;
+          display: flex;
+          flex-direction: column;
         }
-        .close-btn {
-          position: absolute; top: 16px; right: 16px;
-          width: 32px; height: 32px;
-          background: rgba(255,255,255,0.05);
-          border-radius: 50%;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer; color: white;
+
+        @media (min-width: 768px) {
+           .modal-content {
+             border-radius: 24px;
+           }
+        }
+
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+          border-bottom: 1px solid var(--border);
+          padding-bottom: 16px;
+        }
+
+        .modal-title {
+          font-size: 1.4rem;
+          font-weight: 800;
+        }
+
+        .cart-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 0;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .item-details h4 {
+          margin: 0;
+          font-size: 1rem;
+          font-weight: 700;
+        }
+        .item-details p {
+           margin: 4px 0 0 0;
+           font-size: 0.85rem;
+           color: var(--text-muted);
+        }
+
+        .proceed-btn {
+          background: var(--brand);
+          color: #000;
+          border: none;
+          width: 100%;
+          padding: 16px;
+          border-radius: 16px;
+          font-weight: 900;
+          font-size: 1.1rem;
+          margin-top: 20px;
+          cursor: pointer;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .proceed-btn:hover {
+          filter: brightness(1.1);
         }
       `}</style>
 
-            {/* HEADER */}
-            <header className="header">
-                <div className="logo">
-                    MANESAR <span style={{ color: "var(--brand)" }}>CAFE</span>
-                </div>
-                <div
-                    style={{
-                        fontSize: "10px",
-                        fontWeight: 900,
-                        color: "var(--brand)",
-                        background: "rgba(249,115,22,0.1)",
-                        padding: "6px 14px",
-                        borderRadius: "20px",
-                        border: "1px solid rgba(249,115,22,0.2)",
-                    }}
-                >
-                    TABLE {currentTable}
-                </div>
-            </header>
+      {/* CATEGORY FILTER */}
+      <div className="category-scroll">
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(cat)}
+            className={`cat-btn ${selectedCategory === cat ? "active" : ""}`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
 
-            {/* MENU GRID */}
-            <main className="item-grid">
-                {menuItems.map((item) => {
-                    const qty = getItemQuantity(item.id);
-                    return (
-                        <div key={item.id} className="card">
-                            <div className="img-container">
-                                <div className="bestseller-tag">
-                                    <Flame size={10} fill="currentColor" /> BESTSELLER
-                                </div>
-                                {item.image}
-                            </div>
+      {/* MENU GRID */}
+      <main className="item-grid">
+        {filteredItems.map((item) => {
+          const qty = getItemQuantity(item._id);
+          return (
+            <div key={item._id} className="card">
+              <div className="img-container">
+                <img
+                  src={`http://localhost:5001/uploads/${item.image}`}
+                  alt={item.name}
+                />
+              </div>
 
-                            <div className="card-content">
-                                <h3 className="card-title">{item.name}</h3>
-                                <p className="card-desc">{item.desc}</p>
+              <div className="card-content">
+                <h3 className="card-title">{item.name}</h3>
+                <p className="card-desc">{item.category}</p>
 
-                                <div className="price-row">
-                                    <span className="price">₹{item.price}</span>
-                                    {qty === 0 ? (
-                                        <button className="add-btn" onClick={() => addToCart(item)}>
-                                            ADD
-                                        </button>
-                                    ) : (
-                                        <div className="qty-control">
-                                            <button
-                                                className="q-btn"
-                                                onClick={() => removeFromCart(item.id)}
-                                            >
-                                                <Minus size={14} />
-                                            </button>
-                                            <span className="q-val">{qty}</span>
-                                            <button className="q-btn" onClick={() => addToCart(item)}>
-                                                <Plus size={14} />
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-            </main>
+                <div className="price-row">
+                  <span className="price">₹{item.price}</span>
 
-            {/* FLOATING CART - HIDDEN WHEN MODAL IS OPEN */}
-            {cart.length > 0 && !isModalOpen && (
-                <div className="cart-bar">
-                    <div>
-                        <div
-                            style={{
-                                fontSize: "10px",
-                                fontWeight: 800,
-                                color: "#666",
-                                letterSpacing: "0.5px",
-                            }}
-                        >
-                            TOTAL
-                        </div>
-                        <div style={{ fontSize: "20px", fontWeight: 900 }}>
-                            ₹{getTotal()}
-                        </div>
-                    </div>
+                  {qty === 0 ? (
                     <button
-                        onClick={() => setIsModalOpen(true)}
-                        style={{
-                            background: "black",
-                            color: "white",
-                            border: "none",
-                            padding: "10px 24px",
-                            borderRadius: "14px",
-                            fontWeight: 800,
-                            fontSize: "13px",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            whiteSpace: "nowrap",
-                        }}
+                      className="add-btn"
+                      onClick={() => addToCart({ ...item, id: item._id })}
                     >
-                        VIEW CART <ShoppingCart size={14} />
+                      ADD +
                     </button>
+                  ) : (
+                    <div className="qty-control">
+                      <button
+                        className="q-btn"
+                        onClick={() => removeFromCart(item._id)}
+                      >
+                        <Minus size={16} />
+                      </button>
+                      <span className="q-val">{qty}</span>
+                      <button
+                        className="q-btn"
+                        onClick={() => addToCart({ ...item, id: item._id })}
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                  )}
                 </div>
-            )}
+              </div>
+            </div>
+          );
+        })}
+      </main>
 
-            {/* CART MODAL */}
-            {isModalOpen && (
-                <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <div className="close-btn" onClick={() => setIsModalOpen(false)}>
-                            <X size={16} />
-                        </div>
-                        <h2
-                            style={{
-                                fontSize: "20px",
-                                fontWeight: 900,
-                                marginBottom: "20px",
-                            }}
-                        >
-                            Your Order
-                        </h2>
+      {/* CART BAR (Only visible if modal is closed) */}
+      {cart.length > 0 && !isModalOpen && (
+        <div className="cart-bar">
+          <div>
+            <div style={{ fontSize: "11px", color: "#ccc", fontWeight: 600 }}>
+              ITEM TOTAL
+            </div>
+            <div style={{ fontSize: "22px", fontWeight: 800 }}>
+              ₹{getTotal()}
+            </div>
+          </div>
+          <button className="checkout-btn" onClick={() => setIsModalOpen(true)}>
+            VIEW CART <ShoppingCart size={18} fill="black" />
+          </button>
+        </div>
+      )}
 
-                        <div style={{ maxHeight: "50vh", overflowY: "auto" }}>
-                            {cart.map((item) => (
-                                <div
-                                    key={item.id}
-                                    style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        marginBottom: "16px",
-                                        paddingBottom: "16px",
-                                        borderBottom: "1px solid rgba(255,255,255,0.05)",
-                                    }}
-                                >
-                                    <div style={{ display: "flex", gap: "12px" }}>
-                                        <div
-                                            style={{
-                                                width: "40px",
-                                                height: "40px",
-                                                background: "#222",
-                                                borderRadius: "8px",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                fontSize: "20px",
-                                            }}
-                                        >
-                                            {item.image}
-                                        </div>
-                                        <div>
-                                            <div style={{ fontWeight: 700, fontSize: "14px" }}>
-                                                {item.name}
-                                            </div>
-                                            <div style={{ fontSize: "12px", color: "#999" }}>
-                                                ₹{item.price}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="qty-control" style={{ height: "32px" }}>
-                                        <button
-                                            className="q-btn"
-                                            onClick={() => removeFromCart(item.id)}
-                                        >
-                                            <Minus size={12} />
-                                        </button>
-                                        <span
-                                            className="q-val"
-                                            style={{ fontSize: "12px", width: "24px" }}
-                                        >
+      {/* VIEW CART MODAL */}
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">Table {currentTable} Order</div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#fff",
+                  cursor: "pointer",
+                }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div style={{ flexGrow: 1, overflowY: "auto" }}>
+              {cart.map((item) => (
+                <div key={item.id} className="cart-item">
+                  <div className="item-details">
+                    <h4>{item.name}</h4>
+                    <p>
+                      ₹{item.price} x {item.quantity}
+                    </p>
+                  </div>
+                  <div className="qty-control">
+                    <button
+                      className="q-btn"
+                      onClick={() => removeFromCart(item.id)}
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span className="q-val" style={{ fontSize: "0.9rem" }}>
                       {item.quantity}
                     </span>
-                                        <button className="q-btn" onClick={() => addToCart(item)}>
-                                            <Plus size={12} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <button
-                            onClick={handleProceedToCheckout}
-                            style={{
-                                width: "100%",
-                                padding: "16px",
-                                marginTop: "20px",
-                                background: "var(--brand)",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "14px",
-                                fontWeight: 900,
-                                fontSize: "14px",
-                                cursor: "pointer",
-                            }}
-                        >
-                            PROCEED TO PAY • ₹{getTotal()}
-                        </button>
-                    </div>
+                    <button className="q-btn" onClick={() => addToCart(item)}>
+                      <Plus size={14} />
+                    </button>
+                  </div>
                 </div>
-            )}
+              ))}
+            </div>
+
+            <div
+              style={{
+                marginTop: "20px",
+                borderTop: "1px solid var(--border)",
+                paddingTop: "15px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "5px",
+                }}
+              >
+                <span style={{ color: "var(--text-muted)" }}>Subtotal</span>
+                <span>₹{getTotal()}</span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: "1.2rem",
+                  fontWeight: 900,
+                  color: "var(--brand)",
+                }}
+              >
+                <span>Grand Total</span>
+                <span>₹{getTotal()}</span>
+              </div>
+
+              <button className="proceed-btn" onClick={handleProceedToCheckout}>
+                PROCEED TO CHECKOUT <ArrowRight size={20} />
+              </button>
+            </div>
+          </div>
         </div>
-    );
+      )}
+    </div>
+  );
 };
 
 export default Menu;

@@ -26,6 +26,8 @@ app.use(
 );
 app.use(express.json());
 
+app.use("/uploads", express.static("uploads"));
+
 /* ===========================
    3. SOCKET.IO SETUP
 =========================== */
@@ -51,6 +53,11 @@ io.on("connection", (socket) => {
    4. ROUTES
 =========================== */
 app.use("/api/orders", orderRoutes);
+
+/*menu */
+
+const menuRoutes = require("./routes/menuRoutes");
+app.use("/api/menu", menuRoutes);
 
 /* ===========================
    5. SERVER START

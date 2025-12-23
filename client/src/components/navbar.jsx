@@ -1,20 +1,10 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  Menu as MenuIcon,
-  X,
-  ClipboardList,
-  Home,
-  Utensils,
-  ChevronRight,
-} from "lucide-react";
+import { Phone, Mail, MapPin, X, MessageCircle } from "lucide-react";
 
 const Navbar = () => {
   const location = useLocation();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  // Helper to close sidebar when clicking a link
-  const closeSidebar = () => setIsSidebarOpen(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
 
   // --- ADMIN VIEW (Unchanged) ---
   if (location.pathname.startsWith("/admin")) {
@@ -29,6 +19,7 @@ const Navbar = () => {
             justify-content: space-between;
             align-items: center;
             border-bottom: 2px solid #f97316;
+            font-family: 'Inter', sans-serif;
           }
         `}</style>
         <h1 className="font-black text-xl tracking-widest">
@@ -48,184 +39,220 @@ const Navbar = () => {
   return (
     <>
       <style>{`
-        /* MAIN NAVBAR CONTAINER */
-        .main-navbar {
+        /* NAVBAR CONTAINER */
+        .navbar-black {
           position: sticky;
           top: 0;
           z-index: 1000;
-          background: rgba(8, 8, 8, 0.8);
+          /* Deep Blackish Background */
+          background: rgba(5, 5, 5, 0.9);
           backdrop-filter: blur(15px);
           -webkit-backdrop-filter: blur(15px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-          padding: 15px 5%;
-
-          /* LAYOUT FOR CENTERED LOGO */
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          padding: 20px 6%;
           display: flex;
           align-items: center;
-          justify-content: flex-start; /* Aligns hamburger to left */
-          position: relative; /* Needed for absolute centering */
-          width: 100%;
-          height: 70px;
-          box-sizing: border-box;
+          justify-content: space-between;
+          height: 80px;
         }
 
-        /* CENTERED LOGO */
-        .nav-logo-center {
-          position: absolute;
-          left: 50%;
-          transform: translateX(-50%);
-
-          font-size: 20px;
+        /* BRAND LOGO */
+        .brand-logo {
+          font-size: 26px;
           font-weight: 900;
-          letter-spacing: 3px;
-          color: white;
+          letter-spacing: -0.5px;
+          color: #fff;
           text-decoration: none;
-          white-space: nowrap;
+          display: flex;
+          align-items: center;
+          gap: 6px;
         }
 
-        /* HAMBURGER BUTTON */
-        .nav-icon-btn {
+        .brand-highlight {
+          color: #f97316; /* Orange */
+        }
+
+        /* CONTACT BUTTON */
+        .contact-btn {
           background: rgba(255,255,255,0.05);
           border: 1px solid rgba(255,255,255,0.1);
-          color: white;
-          padding: 10px;
-          border-radius: 12px;
+          color: #ccc;
+          padding: 10px 20px;
+          border-radius: 50px;
+          font-size: 14px;
+          font-weight: 600;
           cursor: pointer;
           display: flex;
           align-items: center;
-          justify-content: center;
-          transition: 0.3s;
-          z-index: 1002; /* Ensure clickable above text */
+          gap: 8px;
+          transition: all 0.2s ease;
         }
 
-        .nav-icon-btn:hover {
+        .contact-btn:hover {
           background: #f97316;
-          border-color: #f97316;
-        }
-
-        /* --- SIDEBAR SLIDER --- */
-        .sidebar-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0,0,0,0.7);
-          backdrop-filter: blur(4px);
-          z-index: 2000;
-          opacity: ${isSidebarOpen ? "1" : "0"};
-          visibility: ${isSidebarOpen ? "visible" : "hidden"};
-          transition: 0.3s;
-        }
-
-        .sidebar {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 280px;
-          height: 100%;
-          background: #111;
-          z-index: 2001;
-          padding: 40px 30px;
-          transform: translateX(${isSidebarOpen ? "0" : "-100%"});
-          transition: 0.5s cubic-bezier(0.77, 0, 0.175, 1);
-          box-shadow: 10px 0 40px rgba(0,0,0,0.5);
-        }
-
-        .sidebar-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 40px;
-        }
-
-        .sidebar-item {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
           color: white;
-          text-decoration: none;
-          padding: 20px 0;
-          border-bottom: 1px solid rgba(255,255,255,0.05);
-          font-weight: 700;
-          font-size: 16px;
+          border-color: #f97316;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
         }
 
-        .sidebar-item:hover { color: #f97316; }
+        /* --- MODAL STYLES --- */
+        .modal-overlay {
+          position: fixed;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          background: rgba(0,0,0,0.8);
+          backdrop-filter: blur(8px);
+          z-index: 2000;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 20px;
+          animation: fadeIn 0.2s ease;
+        }
+
+        .contact-modal {
+          background: #14161b;
+          border: 1px solid #2d3340;
+          padding: 30px;
+          border-radius: 24px;
+          width: 100%;
+          max-width: 400px;
+          position: relative;
+          box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+          animation: scaleUp 0.3s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .modal-close {
+          position: absolute;
+          top: 20px; right: 20px;
+          background: rgba(255,255,255,0.05);
+          border: none;
+          color: #fff;
+          width: 32px; height: 32px;
+          border-radius: 50%;
+          cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .modal-close:hover { background: rgba(255,255,255,0.1); }
+
+        .info-row {
+          display: flex;
+          align-items: flex-start;
+          gap: 15px;
+          margin-bottom: 20px;
+          color: #ccc;
+        }
+        .info-icon {
+          color: #f97316;
+          margin-top: 2px;
+        }
+        .info-label {
+          display: block;
+          font-size: 12px;
+          color: #666;
+          font-weight: 700;
+          text-transform: uppercase;
+          margin-bottom: 4px;
+        }
+        .info-text {
+          font-size: 15px;
+          font-weight: 500;
+          color: #f1f5f9;
+        }
       `}</style>
 
       {/* --- NAVBAR --- */}
-      <nav className="main-navbar">
-        {/* Left: Hamburger Only */}
-        <button className="nav-icon-btn" onClick={() => setIsSidebarOpen(true)}>
-          <MenuIcon size={20} />
-        </button>
-
-        {/* Center: Absolute Logo */}
-        <Link to="/menu" className="nav-logo-center">
-          MANESAR <span style={{ color: "#f97316" }}>CAFE</span>
+      <nav className="navbar-black">
+        {/* LOGO */}
+        <Link to="/menu" className="brand-logo">
+          MANESAR<span className="brand-highlight">CAFE</span>
         </Link>
+
+        {/* CONTACT BUTTON */}
+        <button className="contact-btn" onClick={() => setIsContactOpen(true)}>
+          <MessageCircle size={18} />
+          <span style={{ display: "inline-block" }}>Contact Us</span>
+        </button>
       </nav>
 
-      {/* --- MOBILE SLIDER (SIDEBAR) --- */}
-      <div className="sidebar-overlay" onClick={closeSidebar}></div>
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <div
-            style={{ fontSize: "18px", fontWeight: 900, letterSpacing: "2px" }}
-          >
-            MANESAR CAFE
+      {/* --- CONTACT MODAL --- */}
+      {isContactOpen && (
+        <div className="modal-overlay" onClick={() => setIsContactOpen(false)}>
+          <div className="contact-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="modal-close"
+              onClick={() => setIsContactOpen(false)}
+            >
+              <X size={18} />
+            </button>
+
+            <h2
+              style={{
+                fontSize: "24px",
+                fontWeight: 900,
+                marginBottom: "8px",
+                color: "white",
+              }}
+            >
+              Get in Touch
+            </h2>
+            <p
+              style={{ color: "#888", marginBottom: "30px", fontSize: "14px" }}
+            >
+              We are here to help you with your order.
+            </p>
+
+            <div className="info-row">
+              <Phone size={20} className="info-icon" />
+              <div>
+                <span className="info-label">Phone</span>
+                <span className="info-text">+91 98765 43210</span>
+              </div>
+            </div>
+
+            <div className="info-row">
+              <Mail size={20} className="info-icon" />
+              <div>
+                <span className="info-label">Email</span>
+                <span className="info-text">support@manesarcafe.com</span>
+              </div>
+            </div>
+
+            <div className="info-row">
+              <MapPin size={20} className="info-icon" />
+              <div>
+                <span className="info-label">Location</span>
+                <span className="info-text">
+                  Sector 1, Manesar,
+                  <br />
+                  Gurugram, Haryana 122051
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsContactOpen(false)}
+              style={{
+                width: "100%",
+                padding: "14px",
+                marginTop: "10px",
+                background: "#f97316",
+                border: "none",
+                borderRadius: "12px",
+                color: "white",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              Close
+            </button>
           </div>
-          <X
-            color="white"
-            onClick={closeSidebar}
-            style={{ cursor: "pointer" }}
-          />
         </div>
-
-        <nav>
-          <Link to="/menu" className="sidebar-item" onClick={closeSidebar}>
-            <div style={{ display: "flex", gap: "15px" }}>
-              <Home size={20} /> Home
-            </div>
-            <ChevronRight size={16} opacity={0.3} />
-          </Link>
-
-          <Link to="/menu" className="sidebar-item" onClick={closeSidebar}>
-            <div style={{ display: "flex", gap: "15px" }}>
-              <Utensils size={20} /> Menu
-            </div>
-            <ChevronRight size={16} opacity={0.3} />
-          </Link>
-
-          <Link to="/orders" className="sidebar-item" onClick={closeSidebar}>
-            <div style={{ display: "flex", gap: "15px" }}>
-              <ClipboardList size={20} /> My Orders
-            </div>
-            <ChevronRight size={16} opacity={0.3} />
-          </Link>
-        </nav>
-
-        <div style={{ marginTop: "auto", paddingTop: "60px" }}>
-          <p
-            style={{
-              color: "#444",
-              fontSize: "10px",
-              fontWeight: 900,
-              letterSpacing: "2px",
-              textTransform: "uppercase",
-            }}
-          >
-            Support
-          </p>
-          <p style={{ color: "#888", fontSize: "13px", marginTop: "10px" }}>
-            Help Center
-          </p>
-          <p style={{ color: "#888", fontSize: "13px", marginTop: "5px" }}>
-            Terms of Service
-          </p>
-        </div>
-      </aside>
+      )}
     </>
   );
 };
