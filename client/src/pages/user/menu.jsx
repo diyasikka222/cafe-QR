@@ -1,15 +1,14 @@
 import React, { useState } from "react";
-import { useSearchParams } from "react-router-dom"; // <--- CHANGED THIS
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useCart } from "../../contexts/cartContext";
-import { Plus, Minus, X, ShoppingCart, CheckCircle, Flame } from "lucide-react";
-import axios from "axios";
+import { Plus, Minus, X, ShoppingCart, Flame } from "lucide-react";
 
 const Menu = () => {
-    // 1. GET TABLE NUMBER FROM QUERY STRING (?table=0)
+    // 1. GET TABLE NUMBER & NAVIGATE
     const [searchParams] = useSearchParams();
-    const tableFromUrl = searchParams.get("table");
+    const navigate = useNavigate();
 
-    // Default to "05" (or any default) if url is just /menu
+    const tableFromUrl = searchParams.get("table");
     const currentTable = tableFromUrl || "05";
 
     const {
@@ -18,13 +17,11 @@ const Menu = () => {
         getItemQuantity,
         getTotal,
         cart,
-        clearCart,
     } = useCart();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-    const [isSending, setIsSending] = useState(false);
 
+    // 2. FULL MENU ITEMS LIST
     const menuItems = [
         {
             id: 1,
@@ -84,37 +81,16 @@ const Menu = () => {
         },
     ];
 
-    const handleCheckout = async () => {
+    // 3. NEW CHECKOUT NAVIGATION LOGIC
+    const handleProceedToCheckout = () => {
         if (cart.length === 0) return;
-
-        setIsSending(true);
-
-        try {
-            await axios.post("http://localhost:5001/api/orders", {
-                // 2. USE THE DYNAMIC TABLE VARIABLE HERE
-                tableNumber: currentTable,
-                items: cart.map((item) => ({
-                    id: item.id,
-                    name: item.name,
-                    price: item.price,
-                    quantity: item.quantity,
-                })),
-                total: getTotal(),
-            });
-
-            setIsModalOpen(false);
-            setIsSuccessModalOpen(true);
-            clearCart();
-        } catch (err) {
-            console.error("Order failed", err);
-            alert("Failed to send order");
-        } finally {
-            setIsSending(false);
-        }
+        setIsModalOpen(false);
+        navigate(`/checkout?table=${currentTable}`);
     };
 
     return (
         <div className="lumiere-app">
+            {/* 4. RESTORED STYLES */}
             <style>{`
         /* --- GLOBAL RESET --- */
         :root {
@@ -350,7 +326,6 @@ const Menu = () => {
                         border: "1px solid rgba(249,115,22,0.2)",
                     }}
                 >
-                    {/* DISPLAY THE URL TABLE NUMBER */}
                     TABLE {currentTable}
                 </div>
             </header>
@@ -400,7 +375,7 @@ const Menu = () => {
             </main>
 
             {/* FLOATING CART - HIDDEN WHEN MODAL IS OPEN */}
-            {cart.length > 0 && !isModalOpen && !isSuccessModalOpen && (
+            {cart.length > 0 && !isModalOpen && (
                 <div className="cart-bar">
                     <div>
                         <div
@@ -514,8 +489,7 @@ const Menu = () => {
                         </div>
 
                         <button
-                            onClick={handleCheckout}
-                            disabled={isSending}
+                            onClick={handleProceedToCheckout}
                             style={{
                                 width: "100%",
                                 padding: "16px",
@@ -526,58 +500,10 @@ const Menu = () => {
                                 borderRadius: "14px",
                                 fontWeight: 900,
                                 fontSize: "14px",
-                                cursor: isSending ? "not-allowed" : "pointer",
-                                opacity: isSending ? 0.7 : 1,
+                                cursor: "pointer",
                             }}
                         >
-                            {isSending ? "SENDING ORDER..." : `PLACE ORDER • ₹${getTotal()}`}
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* SUCCESS MODAL */}
-            {isSuccessModalOpen && (
-                <div className="modal-overlay">
-                    <div
-                        className="modal-content"
-                        style={{ textAlign: "center", padding: "40px 20px" }}
-                    >
-                        <CheckCircle
-                            size={64}
-                            color="#22c55e"
-                            style={{ margin: "0 auto 20px auto" }}
-                        />
-                        <h2
-                            style={{ fontSize: "24px", fontWeight: 900, marginBottom: "8px" }}
-                        >
-                            Order Sent!
-                        </h2>
-                        <p
-                            style={{
-                                color: "#999",
-                                fontSize: "14px",
-                                marginBottom: "30px",
-                            }}
-                        >
-                            The kitchen has received your order for Table {currentTable}.
-                        </p>
-                        <button
-                            onClick={() => {
-                                setIsSuccessModalOpen(false);
-                                clearCart();
-                            }}
-                            style={{
-                                width: "100%",
-                                padding: "16px",
-                                background: "#fff",
-                                color: "#000",
-                                border: "none",
-                                borderRadius: "14px",
-                                fontWeight: 900,
-                            }}
-                        >
-                            BACK TO MENU
+                            PROCEED TO PAY • ₹{getTotal()}
                         </button>
                     </div>
                 </div>
