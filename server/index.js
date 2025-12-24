@@ -2,8 +2,10 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
+const path = require("path"); // 1. IMPORT PATH
 const connectDB = require("./config/db");
 const orderRoutes = require("./routes/orderRoutes");
+const menuRoutes = require("./routes/menuRoutes");
 require("dotenv").config();
 
 const app = express();
@@ -19,14 +21,17 @@ connectDB();
 =========================== */
 app.use(
   cors({
-    origin: ["http://localhost:5173"], // customer + admin frontend
-    methods: ["GET", "POST", "PATCH"],
+    origin: ["http://localhost:5173"],
+    // 2. ADD 'PUT' AND 'DELETE' HERE
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     credentials: true,
   }),
 );
 app.use(express.json());
 
-app.use("/uploads", express.static("uploads"));
+// 3. ROBUST STATIC FILE SERVING
+// This ensures images load correctly regardless of where you start the server
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* ===========================
    3. SOCKET.IO SETUP
@@ -34,7 +39,7 @@ app.use("/uploads", express.static("uploads"));
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PATCH"],
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
   },
 });
 
@@ -53,10 +58,6 @@ io.on("connection", (socket) => {
    4. ROUTES
 =========================== */
 app.use("/api/orders", orderRoutes);
-
-/*menu */
-
-const menuRoutes = require("./routes/menuRoutes");
 app.use("/api/menu", menuRoutes);
 
 /* ===========================

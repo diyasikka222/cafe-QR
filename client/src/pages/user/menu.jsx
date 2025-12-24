@@ -1,22 +1,39 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { useCart } from "../../contexts/cartContext";
-import { Plus, Minus, ShoppingCart, X, ArrowRight } from "lucide-react";
+import {
+  Plus,
+  Minus,
+  ShoppingCart,
+  X,
+  ChefHat,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 
 const Menu = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-
   const tableFromUrl = searchParams.get("table");
   const currentTable = tableFromUrl || "05";
 
-  const { addToCart, removeFromCart, getItemQuantity, getTotal, cart } =
-    useCart();
+  const {
+    addToCart,
+    removeFromCart,
+    getItemQuantity,
+    getTotal,
+    cart,
+    clearCart,
+  } = useCart();
 
+  // STATE
   const [menuItems, setMenuItems] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // ORDER PROCESSING STATE
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [orderSent, setOrderSent] = useState(false);
 
   /* ===============================
         FETCH MENU FROM DB
@@ -31,12 +48,45 @@ const Menu = () => {
   }, []);
 
   /* ===============================
-        NAVIGATION LOGIC
+        SEND ORDER LOGIC
   =============================== */
-  const handleProceedToCheckout = () => {
+  const handleSendOrder = async () => {
     if (cart.length === 0) return;
-    setIsModalOpen(false);
-    navigate(`/checkout?table=${currentTable}`);
+
+    setIsProcessing(true);
+
+    try {
+      // 1. Simulate Network Delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // 2. Send to Backend
+      await axios.post("http://localhost:5001/api/orders", {
+        tableNumber: currentTable,
+        items: cart.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        total: getTotal(),
+        paymentStatus: "Paid", // Or 'Pending'
+      });
+
+      // 3. Success Feedback
+      setOrderSent(true);
+      clearCart();
+
+      // 4. Close Modal after 2.5 seconds
+      setTimeout(() => {
+        setIsCartOpen(false);
+        setOrderSent(false);
+      }, 2500);
+    } catch (err) {
+      console.error("Order failed", err);
+      alert("Failed to send order. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   /* ===============================
@@ -65,13 +115,12 @@ const Menu = () => {
           --text-muted: #94a3b8;
         }
 
-        /* --- CRITICAL FIX FOR WHITE SPACE --- */
         html, body, #root {
           background-color: var(--bg) !important;
           min-height: 100vh;
           margin: 0;
           padding: 0;
-          overflow-x: hidden; /* Prevent horizontal scroll white space */
+          overflow-x: hidden;
         }
 
         .lumiere-app {
@@ -79,7 +128,7 @@ const Menu = () => {
           color: var(--text-main);
           min-height: 100vh;
           width: 100%;
-          padding-bottom: 120px; /* Space for floating cart */
+          padding-bottom: 120px;
           font-family: 'Inter', system-ui, sans-serif;
           position: relative;
           display: flex;
@@ -109,13 +158,6 @@ const Menu = () => {
           position: relative;
         }
 
-        .card:hover {
-          border-color: var(--brand);
-          transform: translateY(-6px);
-          box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
-          background: var(--surface-highlight);
-        }
-
         .img-container {
           height: 240px;
           width: 100%;
@@ -130,11 +172,6 @@ const Menu = () => {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          transition: transform 0.5s ease;
-        }
-
-        .card:hover .img-container img {
-          transform: scale(1.05);
         }
 
         .card-content {
@@ -372,13 +409,14 @@ const Menu = () => {
            color: var(--text-muted);
         }
 
-        .proceed-btn {
-          background: var(--brand);
-          color: #000;
+        /* SEND TO KITCHEN BUTTON */
+        .send-btn {
+          background: linear-gradient(135deg, #f97316, #ea580c);
+          color: white;
           border: none;
           width: 100%;
-          padding: 16px;
-          border-radius: 16px;
+          padding: 18px;
+          border-radius: 20px;
           font-weight: 900;
           font-size: 1.1rem;
           margin-top: 20px;
@@ -386,11 +424,39 @@ const Menu = () => {
           display: flex;
           justify-content: center;
           align-items: center;
-          gap: 10px;
+          gap: 12px;
+          box-shadow: 0 10px 30px -5px rgba(249, 115, 22, 0.4);
+          transition: all 0.2s ease;
         }
 
-        .proceed-btn:hover {
+        .send-btn:disabled {
+            background: #334155;
+            color: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .send-btn:hover:not(:disabled) {
+          transform: scale(1.02);
           filter: brightness(1.1);
+        }
+
+        /* SUCCESS STATE */
+        .success-view {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+            text-align: center;
+        }
+        .success-view h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: var(--brand);
+        }
+        .success-view p {
+            color: var(--text-muted);
         }
       `}</style>
 
@@ -414,8 +480,11 @@ const Menu = () => {
           return (
             <div key={item._id} className="card">
               <div className="img-container">
+                {/* FIX APPLIED HERE:
+                   Removed the extra '/uploads/' from the path
+                */}
                 <img
-                  src={`http://localhost:5001/uploads/${item.image}`}
+                  src={`http://localhost:5001${item.image}`}
                   alt={item.name}
                 />
               </div>
@@ -458,8 +527,8 @@ const Menu = () => {
         })}
       </main>
 
-      {/* CART BAR (Only visible if modal is closed) */}
-      {cart.length > 0 && !isModalOpen && (
+      {/* FLOATING CART BAR */}
+      {cart.length > 0 && !isCartOpen && (
         <div className="cart-bar">
           <div>
             <div style={{ fontSize: "11px", color: "#ccc", fontWeight: 600 }}>
@@ -469,92 +538,135 @@ const Menu = () => {
               ₹{getTotal()}
             </div>
           </div>
-          <button className="checkout-btn" onClick={() => setIsModalOpen(true)}>
+          <button className="checkout-btn" onClick={() => setIsCartOpen(true)}>
             VIEW CART <ShoppingCart size={18} fill="black" />
           </button>
         </div>
       )}
 
-      {/* VIEW CART MODAL */}
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+      {/* UNIFIED CART + ORDER MODAL */}
+      {isCartOpen && (
+        <div
+          className="modal-overlay"
+          onClick={() => !isProcessing && setIsCartOpen(false)}
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
             <div className="modal-header">
-              <div className="modal-title">Table {currentTable} Order</div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#fff",
-                  cursor: "pointer",
-                }}
-              >
-                <X size={24} />
-              </button>
+              <div className="modal-title">
+                {orderSent ? "Order Sent!" : `Table ${currentTable}`}
+              </div>
+              {!isProcessing && !orderSent && (
+                <button
+                  onClick={() => setIsCartOpen(false)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  <X size={24} />
+                </button>
+              )}
             </div>
 
-            <div style={{ flexGrow: 1, overflowY: "auto" }}>
-              {cart.map((item) => (
-                <div key={item.id} className="cart-item">
-                  <div className="item-details">
-                    <h4>{item.name}</h4>
-                    <p>
-                      ₹{item.price} x {item.quantity}
-                    </p>
-                  </div>
-                  <div className="qty-control">
-                    <button
-                      className="q-btn"
-                      onClick={() => removeFromCart(item.id)}
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <span className="q-val" style={{ fontSize: "0.9rem" }}>
-                      {item.quantity}
-                    </span>
-                    <button className="q-btn" onClick={() => addToCart(item)}>
-                      <Plus size={14} />
-                    </button>
-                  </div>
+            {/* Content Switch: Order Success vs List Items */}
+            {orderSent ? (
+              <div className="success-view">
+                <CheckCircle
+                  size={80}
+                  className="text-green-500 mb-6 animate-bounce"
+                />
+                <h2>Delicious!</h2>
+                <p>Your order has been sent to the kitchen.</p>
+                <p style={{ marginTop: "10px", fontSize: "0.9rem" }}>
+                  Closing...
+                </p>
+              </div>
+            ) : (
+              <>
+                <div style={{ flexGrow: 1, overflowY: "auto" }}>
+                  {cart.map((item) => (
+                    <div key={item.id} className="cart-item">
+                      <div className="item-details">
+                        <h4>{item.name}</h4>
+                        <p>
+                          ₹{item.price} x {item.quantity}
+                        </p>
+                      </div>
+                      <div className="qty-control">
+                        <button
+                          className="q-btn"
+                          onClick={() => removeFromCart(item.id)}
+                          disabled={isProcessing}
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span className="q-val" style={{ fontSize: "0.9rem" }}>
+                          {item.quantity}
+                        </span>
+                        <button
+                          className="q-btn"
+                          onClick={() => addToCart(item)}
+                          disabled={isProcessing}
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            <div
-              style={{
-                marginTop: "20px",
-                borderTop: "1px solid var(--border)",
-                paddingTop: "15px",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginBottom: "5px",
-                }}
-              >
-                <span style={{ color: "var(--text-muted)" }}>Subtotal</span>
-                <span>₹{getTotal()}</span>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: "1.2rem",
-                  fontWeight: 900,
-                  color: "var(--brand)",
-                }}
-              >
-                <span>Grand Total</span>
-                <span>₹{getTotal()}</span>
-              </div>
+                <div
+                  style={{
+                    marginTop: "20px",
+                    borderTop: "1px solid var(--border)",
+                    paddingTop: "15px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "5px",
+                    }}
+                  >
+                    <span style={{ color: "var(--text-muted)" }}>Subtotal</span>
+                    <span>₹{getTotal()}</span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: "1.2rem",
+                      fontWeight: 900,
+                      color: "var(--brand)",
+                    }}
+                  >
+                    <span>Grand Total</span>
+                    <span>₹{getTotal()}</span>
+                  </div>
 
-              <button className="proceed-btn" onClick={handleProceedToCheckout}>
-                PROCEED TO CHECKOUT <ArrowRight size={20} />
-              </button>
-            </div>
+                  <button
+                    className="send-btn"
+                    onClick={handleSendOrder}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="animate-spin" size={24} />{" "}
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        SEND TO KITCHEN <ChefHat size={24} />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

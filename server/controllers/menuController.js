@@ -1,42 +1,36 @@
 const MenuItem = require("../models/MenuItem");
 
-console.log("🔥 REAL MENU CONTROLLER FILE LOADED");
-console.log("MenuItem model:", MenuItem);
-
-// GET all menu items (for customer + admin)
+// Get all menu items
 const getMenuItems = async (req, res) => {
   try {
-    const items = await MenuItem.find().sort({ createdAt: -1 });
+    const items = await MenuItem.find();
     res.json(items);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch menu items" });
+    res.status(500).json({ message: err.message });
   }
 };
 
-// ADD new item (WITH IMAGE UPLOAD)
+// Add new menu item
 const addMenuItem = async (req, res) => {
+  const { name, price, category } = req.body;
+  const image = req.file ? `/uploads/${req.file.filename}` : "";
+
   try {
-    const { name, price, category } = req.body;
-
-    if (!req.file) {
-      return res.status(400).json({ message: "Image is required" });
-    }
-
-    const item = await MenuItem.create({
+    const newItem = new MenuItem({
       name,
       price,
       category,
-      image: req.file.filename, // 👈 store uploaded image filename
+      image,
       available: true,
     });
-
-    res.status(201).json(item);
+    await newItem.save();
+    res.status(201).json(newItem);
   } catch (err) {
-    res.status(500).json({ message: "Failed to add menu item" });
+    res.status(400).json({ message: err.message });
   }
 };
 
-// TOGGLE availability
+// Toggle Availability
 const toggleAvailability = async (req, res) => {
   try {
     const item = await MenuItem.findById(req.params.id);
@@ -44,10 +38,52 @@ const toggleAvailability = async (req, res) => {
 
     item.available = !item.available;
     await item.save();
-
     res.json(item);
   } catch (err) {
-    res.status(500).json({ message: "Failed to update availability" });
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// DELETE MENU ITEM
+const deleteMenuItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedItem = await MenuItem.findByIdAndDelete(id);
+
+    if (!deletedItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    res.status(200).json({ message: "Menu item deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting menu item:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// UPDATE MENU ITEM
+const updateMenuItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, price, category } = req.body;
+
+    let updateData = { name, price, category };
+
+    // Only update image if a new file is sent
+    if (req.file) {
+      updateData.image = `/uploads/${req.file.filename}`;
+    }
+
+    const updatedItem = await MenuItem.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
+
+    if (!updatedItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    res.status(200).json(updatedItem);
+  } catch (error) {
+    console.error("Error updating menu item:", error);
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
@@ -55,4 +91,6 @@ module.exports = {
   getMenuItems,
   addMenuItem,
   toggleAvailability,
+  deleteMenuItem,
+  updateMenuItem,
 };

@@ -1,14 +1,18 @@
 const express = require("express");
-const {
-  createOrder,
-  getOrders,
-  updateOrderStatus,
-} = require("../controllers/orderController");
-
 const router = express.Router();
 
-router.post("/", createOrder);
-router.get("/", getOrders);
-router.patch("/:id", updateOrderStatus);
+// Import the functions.
+// If updateOrder was missing in the controller export, this variable would be 'undefined', causing the crash.
+const {
+  getOrders,
+  createOrder,
+  updateOrder,
+} = require("../controllers/orderController");
 
-module.exports = router; // ✅ IMPORTANT
+router.get("/", getOrders);
+router.post("/", createOrder);
+
+// The error happened here because updateOrder was undefined
+router.patch("/:id", updateOrder);
+
+module.exports = router;
