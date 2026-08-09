@@ -1,4 +1,4 @@
-# Cafe — Full-stack Menu & Ordering App
+# Cafe 
 
 ## Project overview
 
